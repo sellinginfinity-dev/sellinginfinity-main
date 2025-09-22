@@ -403,41 +403,46 @@ export default function AdminCalendar() {
                         Busy Slots ({busySlots.length})
                       </h4>
                       <div className="space-y-2">
-                        {busySlots.map((slot) => (
-                          <div key={slot.id} className={`border rounded p-3 ${
-                            slot.away_status 
-                              ? 'bg-blue-900/20 border-blue-500/30' 
-                              : 'bg-gray-700 border-gray-600'
-                          }`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                {slot.away_status ? (
-                                  <span className="text-blue-400">🚫</span>
-                                ) : (
-                                  <Clock className="h-4 w-4 text-red-400" />
-                                )}
-                                <span className="text-sm font-medium text-white">{slot.title || 'Busy'}</span>
-                                {slot.away_status && (
-                                  <span className="px-2 py-1 bg-blue-800/30 text-blue-300 text-xs rounded-full border border-blue-500/30">
-                                    Away
-                                  </span>
-                                )}
+                        {busySlots.map((slot) => {
+                          // Detect away status based on title since away_status column doesn't exist yet
+                          const isAway = slot.title === 'Away - Not Available';
+                          
+                          return (
+                            <div key={slot.id} className={`border rounded p-3 ${
+                              isAway 
+                                ? 'bg-blue-900/20 border-blue-500/30' 
+                                : 'bg-gray-700 border-gray-600'
+                            }`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  {isAway ? (
+                                    <span className="text-blue-400">🚫</span>
+                                  ) : (
+                                    <Clock className="h-4 w-4 text-red-400" />
+                                  )}
+                                  <span className="text-sm font-medium text-white">{slot.title || 'Busy'}</span>
+                                  {isAway && (
+                                    <span className="px-2 py-1 bg-blue-800/30 text-blue-300 text-xs rounded-full border border-blue-500/30">
+                                      Away
+                                    </span>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => removeBusySlot(slot.id)}
+                                  className={`hover:opacity-80 ${
+                                    isAway ? 'text-blue-400 hover:text-blue-300' : 'text-red-400 hover:text-red-300'
+                                  }`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
                               </div>
-                              <button
-                                onClick={() => removeBusySlot(slot.id)}
-                                className={`hover:opacity-80 ${
-                                  slot.away_status ? 'text-blue-400 hover:text-blue-300' : 'text-red-400 hover:text-red-300'
-                                }`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                              <p className="text-sm text-gray-300 mt-1">
+                                <span className="text-gray-400">{formatDate(slot.start_time)} •</span> {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                              </p>
+                              {slot.description && <p className="text-sm text-gray-400">{slot.description}</p>}
                             </div>
-                            <p className="text-sm text-gray-300 mt-1">
-                              <span className="text-gray-400">{formatDate(slot.start_time)} •</span> {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                            </p>
-                            {slot.description && <p className="text-sm text-gray-400">{slot.description}</p>}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}

@@ -143,16 +143,22 @@ export async function POST(request) {
       console.log('Converted to UTC:', { 
         startDateTime: startDateTime.toISOString(), 
         endDateTime: endDateTime.toISOString() 
-      });      const { data, error } = await supabaseAdmin
+      });      // Create the insert data object
+      const insertData = {
+        title: awayStatus ? 'Away - Not Available' : (reason || 'Busy - Admin Block'),
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        description: awayStatus ? 'Admin is away/unavailable' : (reason || 'Time blocked by admin'),
+        created_at: new Date().toISOString()
+      };
+      
+      // Only add away_status if the column exists (will be handled by a database migration later)
+      // For now, we'll use the title and description to indicate away status
+      console.log('Creating slot with awayStatus:', awayStatus, 'Title:', insertData.title);
+      
+      const { data, error } = await supabaseAdmin
         .from('calendar_events')
-        .insert({
-          title: awayStatus ? 'Away - Not Available' : (reason || 'Busy - Admin Block'),
-          start_time: startDateTime.toISOString(),
-          end_time: endDateTime.toISOString(),
-          description: awayStatus ? 'Admin is away/unavailable' : (reason || 'Time blocked by admin'),
-          away_status: awayStatus || false,
-          created_at: new Date().toISOString()
-        })
+        .insert(insertData)
         .select();
 
       if (error) {

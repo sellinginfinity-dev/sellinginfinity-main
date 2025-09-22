@@ -27,17 +27,23 @@ export async function PUT(request, { params }) {
     const startDateTime = new Date(startDateTimeLocal);
     const endDateTime = new Date(endDateTimeLocal);
 
+    // Create the update data object
+    const updateData = {
+      title: awayStatus ? 'Away - Not Available' : (reason || 'Busy - Admin Block'),
+      start_time: startDateTime.toISOString(),
+      end_time: endDateTime.toISOString(),
+      description: awayStatus ? 'Admin is away/unavailable' : (reason || 'Time blocked by admin'),
+      updated_at: new Date().toISOString()
+    };
+    
+    // Only add away_status if the column exists (will be handled by a database migration later)
+    // For now, we'll use the title and description to indicate away status
+    console.log('Updating slot with awayStatus:', awayStatus, 'Title:', updateData.title);
+    
     // Update the blocked event in calendar_events table
     const { data, error } = await supabaseAdmin
       .from('calendar_events')
-      .update({
-        title: awayStatus ? 'Away - Not Available' : (reason || 'Busy - Admin Block'),
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
-        description: awayStatus ? 'Admin is away/unavailable' : (reason || 'Time blocked by admin'),
-        away_status: awayStatus || false,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
       .select();
 

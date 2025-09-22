@@ -451,8 +451,8 @@ const BusySlotsManager = () => {
                             <div className="text-gray-300">
                               <div className="flex items-center space-x-2">
                                 <span className="font-medium">{slot.title || 'Busy - Admin Block'}</span>
-                                {slot.away_status && (
-                                  <span className="px-2 py-1 bg-red-900/30 text-red-300 text-xs rounded-full border border-red-500/30">
+                                {slot.title === 'Away - Not Available' && (
+                                  <span className="px-2 py-1 bg-blue-900/30 text-blue-300 text-xs rounded-full border border-blue-500/30">
                                     🚫 Away
                                   </span>
                                 )}
