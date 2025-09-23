@@ -126,7 +126,7 @@ export default function ProfileManager() {
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+        <h2 className="text-xl font-semibold text-gray-900 text-gray-900 dark:text-white flex items-center">
           <User className="mr-2" size={20} />
           Profile Settings
         </h2>
@@ -178,7 +178,7 @@ export default function ProfileManager() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Basic Information */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Basic Information</h3>
+            <h3 className="text-lg font-medium text-gray-900 text-gray-900 dark:text-white mb-4">Basic Information</h3>
             
             <div className="space-y-4">
               <div>
@@ -187,7 +187,7 @@ export default function ProfileManager() {
                 </label>
                 <div className="flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
                   <Mail size={16} className="text-gray-400 mr-2" />
-                  <span className="text-gray-900 dark:text-white">{user?.email}</span>
+                  <span className="text-gray-900 text-gray-900 dark:text-white">{user?.email}</span>
                 </div>
               </div>
 
@@ -202,7 +202,7 @@ export default function ProfileManager() {
                     value={formData.first_name}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
                   />
                 </div>
                 <div>
@@ -215,7 +215,7 @@ export default function ProfileManager() {
                     value={formData.last_name}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
                   />
                 </div>
               </div>
@@ -233,7 +233,7 @@ export default function ProfileManager() {
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     placeholder="+1 (555) 123-4567"
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
                   />
                 </div>
               </div>
@@ -242,7 +242,7 @@ export default function ProfileManager() {
 
           {/* Professional Information */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Professional Details</h3>
+            <h3 className="text-lg font-medium text-gray-900 text-gray-900 dark:text-white mb-4">Professional Details</h3>
             
             <div className="space-y-4">
               <div>
@@ -255,7 +255,7 @@ export default function ProfileManager() {
                   value={formData.company}
                   onChange={handleInputChange}
                   disabled={!isEditing}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -269,7 +269,7 @@ export default function ProfileManager() {
                   value={formData.job_title}
                   onChange={handleInputChange}
                   disabled={!isEditing}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -285,7 +285,7 @@ export default function ProfileManager() {
                     value={formData.timezone}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
                   >
                     {Object.entries(getTimezonesByRegion()).map(([region, timezones]) => (
                       <optgroup key={region} label={region}>
@@ -352,13 +352,13 @@ export default function ProfileManager() {
             disabled={!isEditing}
             rows={3}
             placeholder="Tell us a bit about yourself..."
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 dark:text-white"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
           />
         </div>
 
         {/* Notification Preferences */}
         <div className="mt-6">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Notification Preferences</h3>
+          <h3 className="text-lg font-medium text-gray-900 text-gray-900 dark:text-white mb-4">Notification Preferences</h3>
           <div className="space-y-3">
             <label className="flex items-center">
               <input
