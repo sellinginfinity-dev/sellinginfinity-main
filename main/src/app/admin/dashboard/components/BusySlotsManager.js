@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/app/context/ToastContext';
-import { Calendar, Clock, Edit, Trash2, Plus, Save, X, Mail } from 'lucide-react';
+import { Calendar, Clock, Edit, Trash2, Save, Mail } from 'lucide-react';
 
 const BusySlotsManager = () => {
   const { success, error: showError, warning, info, showConfirm } = useToast();
   const [busySlots, setBusySlots] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [editingSlot, setEditingSlot] = useState(null);
-  const [newSlot, setNewSlot] = useState({
-    date: new Date().toISOString().split('T')[0],
-    startTime: '09:00',
-    endTime: '10:00',
-    reason: '',
-    awayStatus: false
-  });
-  const [showNewSlotForm, setShowNewSlotForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sendEmailNotification, setSendEmailNotification] = useState(false);
 
@@ -37,38 +29,6 @@ const BusySlotsManager = () => {
     }
   };
 
-  const handleCreateBusySlot = async () => {
-    try {
-      const response = await fetch('/api/admin/calendar-slots', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mark_busy',
-          ...newSlot,
-          sendEmail: sendEmailNotification
-        })
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        await fetchBusySlots();
-        setShowNewSlotForm(false);
-        setNewSlot({
-          date: selectedDate,
-          startTime: '09:00',
-          endTime: '10:00',
-          reason: '',
-          awayStatus: false
-        });
-        setSendEmailNotification(false);
-        success('Busy slot created successfully!');
-      } else {
-        showError('Failed to create busy slot: ' + result.error);
-      }
-    } catch (error) {
-      showError('Error creating busy slot: ' + error.message);
-    }
-  };
 
   const handleUpdateBusySlot = async (slotId, updatedData) => {
     try {
@@ -269,13 +229,13 @@ const BusySlotsManager = () => {
           <Calendar className="h-6 w-6 text-orange-400" />
           <h3 className="text-xl font-semibold text-white">Busy Slots Manager</h3>
         </div>
-        <button
-          onClick={() => setShowNewSlotForm(true)}
+        <a
+          href="/admin/calendar"
           className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors"
         >
-          <Plus className="h-4 w-4" />
-          <span>Add Busy Slot</span>
-        </button>
+          <Calendar className="h-4 w-4" />
+          <span>Open Full Calendar</span>
+        </a>
       </div>
 
       {/* Date Selector */}
@@ -297,119 +257,43 @@ const BusySlotsManager = () => {
         </div>
       </div>
 
-      {/* New Slot Form */}
-      {showNewSlotForm && (
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-white">Create New Busy Slot</h4>
-            <button
-              onClick={() => setShowNewSlotForm(false)}
-              className="text-gray-400 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
+      {/* Availability Status Message */}
+      <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6">
+        <div className="flex items-center space-x-4">
+          <div className="flex-shrink-0">
+            <Calendar className="h-8 w-8 text-blue-400" />
           </div>
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Date</label>
-                <input
-                  type="date"
-                  value={newSlot.date}
-                  onChange={(e) => setNewSlot({...newSlot, date: e.target.value})}
-                  className="w-full p-3 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Start Time</label>
-                <input
-                  type="time"
-                  value={newSlot.startTime}
-                  onChange={(e) => setNewSlot({...newSlot, startTime: e.target.value})}
-                  className="w-full p-3 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">End Time</label>
-                <input
-                  type="time"
-                  value={newSlot.endTime}
-                  onChange={(e) => setNewSlot({...newSlot, endTime: e.target.value})}
-                  className="w-full p-3 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Reason (Optional)</label>
-              <input
-                type="text"
-                value={newSlot.reason}
-                onChange={(e) => setNewSlot({...newSlot, reason: e.target.value})}
-                placeholder="Meeting, personal appointment, etc."
-                className="w-full p-3 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-            
-            {/* Away Status Option */}
-            <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="awayStatus"
-                  checked={newSlot.awayStatus}
-                  onChange={(e) => setNewSlot({...newSlot, awayStatus: e.target.checked})}
-                  className="rounded bg-gray-600 border-gray-500 text-blue-500 focus:ring-blue-500"
-                />
-                <div className="flex-1">
-                  <label htmlFor="awayStatus" className="text-sm font-medium text-blue-300 cursor-pointer">
-                    🚫 Mark as "Away" / "Not Available"
-                  </label>
-                  <p className="text-xs text-blue-200 mt-1">
-                    Use this for sleeping time, physical activity, or when you're completely unavailable for any sessions
-                  </p>
-                </div>
-              </div>
-              
-              {newSlot.awayStatus && (
-                <div className="mt-3 p-3 bg-blue-800/20 rounded border border-blue-600/30">
-                  <p className="text-sm text-blue-200">
-                    <strong>💡 Away Status:</strong> This will block all bookings during this time period and show you as "Not Available" to clients.
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="sendEmailNew"
-                checked={sendEmailNotification}
-                onChange={(e) => setSendEmailNotification(e.target.checked)}
-                className="rounded bg-gray-600 border-gray-500 text-orange-500"
-              />
-              <label htmlFor="sendEmailNew" className="text-sm text-gray-300 flex items-center">
-                <Mail className="h-4 w-4 mr-1" />
-                Send email notification to affected clients
-              </label>
-            </div>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowNewSlotForm(false)}
-                className="px-4 py-2 bg-gray-600 text-gray-300 rounded-lg hover:bg-gray-500 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateBusySlot}
-                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center space-x-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Create Slot</span>
-              </button>
-            </div>
+          <div className="flex-1">
+            <h4 className="text-lg font-semibold text-blue-300 mb-2">
+              📅 Set Your Availability Status
+            </h4>
+            <p className="text-blue-200 mb-4">
+              To create busy slots or mark yourself as away, please use the full calendar view where you can:
+            </p>
+            <ul className="text-blue-200 space-y-2 mb-4">
+              <li className="flex items-center space-x-2">
+                <span className="text-blue-400">🔴</span>
+                <span>Mark specific time slots as "Busy" for meetings or appointments</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <span className="text-blue-400">🚫</span>
+                <span>Mark time slots as "Away" when you're completely unavailable</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <span className="text-blue-400">📊</span>
+                <span>View your complete schedule and availability at a glance</span>
+              </li>
+            </ul>
+            <a
+              href="/admin/calendar"
+              className="inline-flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Open Full Calendar</span>
+            </a>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Busy Slots List */}
       <div className="bg-gray-800 rounded-lg border border-gray-700">
