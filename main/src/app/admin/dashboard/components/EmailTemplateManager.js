@@ -969,6 +969,7 @@ const EmailTemplateManager = () => {
               to: user.email,
               subject: personalizedSubject,
               html: personalizedHtml,
+              provider: 'smtp',
           templateName: currentTemplate?.name
         })
       });
