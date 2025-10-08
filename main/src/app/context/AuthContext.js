@@ -17,15 +17,22 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Error getting session:', error);
-      } else {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
         setSession(session);
         setUser(session?.user ?? null);
+      } catch (err) {
+        console.error('Error getting session:', err);
+        // If refresh token invalid/missing, ensure clean state
+        setSession(null);
+        setUser(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('userSession');
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     getInitialSession();
@@ -34,10 +41,19 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session);
-        setSession(session);
-        setUser(session?.user ?? null);
+        // If token refresh fails or session becomes null, clear state
+        if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          setSession(session);
+          setUser(session?.user ?? null);
+        } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESH_FAILED') {
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
         setLoading(false);
-        
+
         // Store user session in localStorage for payment callbacks
         if (typeof window !== 'undefined') {
           if (session?.user) {
