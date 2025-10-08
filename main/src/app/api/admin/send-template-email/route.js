@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
   try {
-    const { to, subject, html, templateName } = await request.json();
+    const { to, subject, html, templateName, provider } = await request.json();
 
     if (!to || !subject || !html) {
       return NextResponse.json(
@@ -15,8 +15,11 @@ export async function POST(request) {
       );
     }
 
-    // If RESEND is configured, use it in production for reliability (SMTP may be blocked on hosts like Vercel)
-    if (process.env.RESEND_API_KEY) {
+    // Prefer SMTP if explicitly requested or SMTP creds exist
+    const smtpAvailable = !!(process.env.SMTP_HOST || (process.env.EMAIL_USER && process.env.EMAIL_PASS));
+    const useSmtp = provider === 'smtp' || (provider !== 'resend' && smtpAvailable);
+
+    if (!useSmtp && process.env.RESEND_API_KEY) {
       try {
         const apiRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -45,8 +48,8 @@ export async function POST(request) {
       }
     }
 
-    // Check if Gmail SMTP credentials are configured for Nodemailer fallback
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    // Check if SMTP credentials are configured for Nodemailer
+    if (!smtpAvailable) {
       const hosted = !!process.env.VERCEL;
       const msg = hosted
         ? 'Email service not configured for production. SMTP is often blocked on hosting providers. Set RESEND_API_KEY (recommended) or EMAIL_USER/EMAIL_PASS.'
