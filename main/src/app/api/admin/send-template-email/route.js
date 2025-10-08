@@ -25,11 +25,11 @@ export async function POST(request) {
       );
     }
 
-    // Prefer SMTP if explicitly requested or SMTP creds exist
+    // Prefer Resend automatically if available unless explicitly forcing SMTP
     const smtpAvailable = !!(process.env.SMTP_HOST || (process.env.EMAIL_USER && process.env.EMAIL_PASS));
-    const useSmtp = provider === 'smtp' || (provider !== 'resend' && smtpAvailable);
+    const useSmtp = provider === 'smtp' && smtpAvailable;
 
-    if (!useSmtp && process.env.RESEND_API_KEY) {
+    if (process.env.RESEND_API_KEY && !useSmtp) {
       try {
         const apiRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -38,7 +38,7 @@ export async function POST(request) {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            from: process.env.RESEND_FROM || `Selling Infinity <${process.env.EMAIL_USER || 'no-reply@example.com'}>`,
+            from: process.env.RESEND_FROM || 'onboarding@resend.dev',
             to: Array.isArray(to) ? to : [to],
             subject,
             html
@@ -58,7 +58,7 @@ export async function POST(request) {
       }
     }
 
-    // Check if SMTP credentials are configured for Nodemailer
+    // If we reached here, either SMTP was forced or Resend is unavailable
     if (!smtpAvailable) {
       const hosted = !!process.env.VERCEL;
       const msg = hosted
