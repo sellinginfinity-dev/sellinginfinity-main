@@ -84,6 +84,10 @@ export async function POST(request) {
           user: process.env.SMTP_USER || process.env.EMAIL_USER,
           pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
         },
+        tls: {
+          // Disable strict TLS validation to prevent Render certificate issues
+          rejectUnauthorized: false
+        },
         connectionTimeout: 15000,
         greetingTimeout: 10000,
         socketTimeout: 20000,
@@ -94,6 +98,10 @@ export async function POST(request) {
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS, // App Password
+        },
+        tls: {
+          // Disable strict TLS validation for Gmail transport on some hosts
+          rejectUnauthorized: false
         },
         connectionTimeout: 15000,
         greetingTimeout: 10000,
