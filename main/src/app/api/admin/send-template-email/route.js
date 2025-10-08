@@ -4,6 +4,16 @@ import nodemailer from 'nodemailer';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': process.env.CORS_ALLOW_ORIGIN || '*',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: { ...corsHeaders, 'Access-Control-Max-Age': '86400' } });
+}
+
 export async function POST(request) {
   try {
     const { to, subject, html, templateName, provider } = await request.json();
@@ -11,7 +21,7 @@ export async function POST(request) {
     if (!to || !subject || !html) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -38,13 +48,13 @@ export async function POST(request) {
         const data = await apiRes.json();
         if (!apiRes.ok) {
           const msg = data?.message || 'Failed to send email via Resend';
-          return NextResponse.json({ success: false, error: msg }, { status: apiRes.status || 500 });
+          return NextResponse.json({ success: false, error: msg, provider: 'resend' }, { status: apiRes.status || 500, headers: corsHeaders });
         }
 
-        return NextResponse.json({ success: true, messageId: data?.id || 'resend', provider: 'resend', templateName });
+        return NextResponse.json({ success: true, messageId: data?.id || 'resend', provider: 'resend', templateName }, { headers: corsHeaders });
       } catch (e) {
         console.error('Resend API error:', e);
-        return NextResponse.json({ success: false, error: e.message || 'Resend API error' }, { status: 500 });
+        return NextResponse.json({ success: false, error: e.message || 'Resend API error', provider: 'resend' }, { status: 500, headers: corsHeaders });
       }
     }
 
@@ -56,8 +66,8 @@ export async function POST(request) {
         : 'Email service not configured. Please add EMAIL_USER and EMAIL_PASS to environment variables.';
       console.error('Email configuration missing');
       return NextResponse.json(
-        { success: false, error: msg },
-        { status: 500 }
+        { success: false, error: msg, provider: 'smtp' },
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -99,8 +109,8 @@ export async function POST(request) {
     } catch (verifyError) {
       console.error('SMTP connection verification failed:', verifyError);
       return NextResponse.json(
-        { success: false, error: 'Email service connection failed or timed out. Consider using RESEND_API_KEY in production.' },
-        { status: 500 }
+        { success: false, error: 'Email service connection failed or timed out. Consider using RESEND_API_KEY in production.', provider: 'smtp', code: verifyError?.code || 'VERIFY_FAILED' },
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -119,8 +129,9 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       messageId: info.messageId,
-      templateName
-    });
+      templateName,
+      provider: 'smtp'
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('Error sending template email:', error);
@@ -136,8 +147,8 @@ export async function POST(request) {
     }
     
     return NextResponse.json(
-      { success: false, error: errorMessage },
-      { status: 500 }
+      { success: false, error: errorMessage, provider: 'smtp' },
+      { status: 500, headers: corsHeaders }
     );
   }
 }
