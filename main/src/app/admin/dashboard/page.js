@@ -158,11 +158,22 @@ export default function AdminDashboard() {
         body: JSON.stringify({ type: 'manual' })
       });
 
-      const result = await response.json();
-      if (result.success) {
-        success(`Session reminders sent: ${result.results.successful} successful, ${result.results.failed} failed`);
+      let result = null;
+      try {
+        result = await response.json();
+      } catch (_) {
+        // no-op, fall through to error
+      }
+
+      const ok = result && (result.success === true || result.successful === true);
+      const successful = (result && (result.results?.successful ?? result.sentCount ?? result.sent ?? 0)) || 0;
+      const failed = (result && (result.results?.failed ?? result.failed ?? 0)) || 0;
+
+      if (ok) {
+        success(`Session reminders sent: ${successful} successful, ${failed} failed`);
       } else {
-        showError('Failed to send reminders: ' + result.error);
+        const errMsg = result && result.error ? result.error : `Unexpected response${response.status ? ` (HTTP ${response.status})` : ''}`;
+        showError('Failed to send reminders: ' + errMsg);
       }
     } catch (error) {
       console.error('Error sending reminders:', error);

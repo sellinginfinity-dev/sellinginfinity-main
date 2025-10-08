@@ -438,6 +438,43 @@ const EmailTemplateManager = () => {
   const [showUserSelection, setShowUserSelection] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [autoFilledData, setAutoFilledData] = useState({});
+  const [showDataEditor, setShowDataEditor] = useState(false);
+  const [previewUserId, setPreviewUserId] = useState(null);
+
+  // Build normalized data for placeholder replacement per template type
+  const buildTemplateDataForType = (templateTypeRaw, rawData) => {
+    const t = (templateTypeRaw || '').toLowerCase();
+    const data = { ...(rawData || {}) };
+
+    // Common aliases
+    if (data.reason && !data.suspension_reason) data.suspension_reason = data.reason;
+    if (data.end_date && !data.suspension_end_date) data.suspension_end_date = data.end_date;
+
+    // Compute suspension_end_date if possible
+    if (!data.suspension_end_date && data.suspension_duration) {
+      const dur = parseInt(String(data.suspension_duration).replace(/[^0-9]/g, ''), 10);
+      if (!Number.isNaN(dur)) {
+        const d = new Date();
+        d.setDate(d.getDate() + dur);
+        data.suspension_end_date = d.toLocaleDateString();
+      }
+    }
+
+    // Map alternative keys used in some templates
+    if ((t.includes('booking') || t.includes('resched') || t.includes('cancel')) && !data.service_name && data.product_name) {
+      data.service_name = data.product_name;
+    }
+
+    // Final safety defaults
+    if (!data.customer_name && data.customer_email) {
+      data.customer_name = data.customer_email.split('@')[0];
+    }
+    if (!data.suspension_date) {
+      data.suspension_date = new Date().toLocaleDateString();
+    }
+    return data;
+  };
   const [templateFormData, setTemplateFormData] = useState({
     key: '',
     name: '',
@@ -554,6 +591,14 @@ const EmailTemplateManager = () => {
 
   const handleTemplateChange = (templateKey) => {
     setSelectedTemplate(templateKey);
+    setCurrentTemplate(templates[templateKey]);
+    
+    // Refresh auto-filled data for selected users when template changes
+    if (selectedUsers.length > 0) {
+      selectedUsers.forEach(user => {
+        handleUserSelection(user);
+      });
+    }
   };
 
   const handleSubjectChange = (newSubject) => {
@@ -653,6 +698,220 @@ const EmailTemplateManager = () => {
   //   }
   // };
 
+  // Function to fetch user's booking data and auto-fill customer information
+  const fetchUserBookingData = async (user) => {
+    try {
+      const response = await fetch(`/api/admin/user-booking-data?userId=${user.id}`);
+      const result = await response.json();
+      
+      if (result.success && result.bookingData) {
+        const booking = result.bookingData;
+        return {
+          customer_name: user.name || user.full_name || user.email.split('@')[0],
+          customer_email: user.email,
+          booking_date: booking.booking_date ? new Date(booking.booking_date).toLocaleDateString() : 'TBD',
+          booking_time: booking.booking_time || 'TBD',
+          service_name: booking.products?.name || 'Coaching Session',
+          duration: booking.duration_minutes || '60',
+          meeting_link: 'TBD', // This field doesn't exist in the current schema
+          reschedule_link: `https://yoursite.com/reschedule/${booking.id || '123'}`,
+          booking_link: 'https://yoursite.com/book',
+          dashboard_link: 'https://yoursite.com/dashboard',
+          support_link: 'https://yoursite.com/support'
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching user booking data:', error);
+    }
+    
+    // Fallback to default data if no booking found
+    return {
+      customer_name: user.name || user.full_name || user.email.split('@')[0],
+      customer_email: user.email,
+      booking_date: 'TBD',
+      booking_time: 'TBD',
+      service_name: 'Coaching Session',
+      duration: '60',
+      meeting_link: 'TBD',
+      reschedule_link: 'https://yoursite.com/reschedule/123',
+      booking_link: 'https://yoursite.com/book',
+      dashboard_link: 'https://yoursite.com/dashboard',
+      support_link: 'https://yoursite.com/support'
+    };
+  };
+
+  // Normalize/standardize template type to supported set
+  const getEffectiveTemplateType = (rawType) => {
+    const t = (rawType || '').toLowerCase();
+    if (t.includes('cancel')) return 'booking_cancelled';
+    if (t.includes('resched')) return 'booking_rescheduled';
+    if (t.includes('account')) return 'account';
+    if (t.includes('welcome')) return 'welcome';
+    if (t.includes('promo')) return 'promotional';
+    return t || 'booking';
+  };
+
+  // Function to get template-specific fields based on template type
+  const getTemplateFields = (templateTypeRaw) => {
+    const templateType = getEffectiveTemplateType(templateTypeRaw);
+    const fieldConfigs = {
+      booking: [
+        { key: 'customer_name', label: 'Customer Name', type: 'text' },
+        { key: 'booking_date', label: 'Booking Date', type: 'text' },
+        { key: 'booking_time', label: 'Booking Time', type: 'text' },
+        { key: 'service_name', label: 'Service Name', type: 'text' },
+        { key: 'duration', label: 'Duration (minutes)', type: 'text' },
+        { key: 'meeting_link', label: 'Meeting Link', type: 'url' }
+      ],
+      booking_cancelled: [
+        { key: 'customer_name', label: 'Customer Name', type: 'text' },
+        { key: 'booking_date', label: 'Booking Date', type: 'text' },
+        { key: 'booking_time', label: 'Booking Time', type: 'text' },
+        { key: 'service_name', label: 'Service Name', type: 'text' },
+        { key: 'cancellation_reason', label: 'Cancellation Reason', type: 'text' }
+      ],
+      booking_rescheduled: [
+        { key: 'customer_name', label: 'Customer Name', type: 'text' },
+        { key: 'original_booking_date', label: 'Original Date', type: 'text' },
+        { key: 'original_booking_time', label: 'Original Time', type: 'text' },
+        { key: 'new_booking_date', label: 'New Date', type: 'text' },
+        { key: 'new_booking_time', label: 'New Time', type: 'text' },
+        { key: 'service_name', label: 'Service Name', type: 'text' },
+        { key: 'reschedule_reason', label: 'Reschedule Reason', type: 'text' }
+      ],
+      account: [
+        { key: 'customer_name', label: 'Customer Name', type: 'text' },
+        { key: 'customer_email', label: 'Customer Email', type: 'email' },
+        { key: 'suspension_reason', label: 'Suspension Reason', type: 'text' },
+        { key: 'suspension_duration', label: 'Suspension Duration', type: 'text' },
+        { key: 'suspension_date', label: 'Suspension Date', type: 'text' },
+        { key: 'support_link', label: 'Support Link', type: 'url' }
+      ],
+      welcome: [
+        { key: 'customer_name', label: 'Customer Name', type: 'text' },
+        { key: 'dashboard_link', label: 'Dashboard Link', type: 'url' },
+        { key: 'booking_link', label: 'Booking Link', type: 'url' }
+      ],
+      promotional: [
+        { key: 'customer_name', label: 'Customer Name', type: 'text' },
+        { key: 'offer_title', label: 'Offer Title', type: 'text' },
+        { key: 'discount_amount', label: 'Discount Amount', type: 'text' },
+        { key: 'offer_description', label: 'Offer Description', type: 'text' },
+        { key: 'benefit_1', label: 'Benefit 1', type: 'text' },
+        { key: 'benefit_2', label: 'Benefit 2', type: 'text' },
+        { key: 'benefit_3', label: 'Benefit 3', type: 'text' },
+        { key: 'expiry_date', label: 'Expiry Date', type: 'text' },
+        { key: 'offer_link', label: 'Offer Link', type: 'url' }
+      ]
+    };
+    
+    return fieldConfigs[templateType] || fieldConfigs.booking; // Default to booking fields
+  };
+
+  // Function to get default values for template-specific fields
+  const getDefaultTemplateData = (templateTypeRaw, user) => {
+    const templateType = getEffectiveTemplateType(templateTypeRaw);
+    const baseData = {
+      customer_name: user.name || user.full_name || user.email.split('@')[0],
+      customer_email: user.email
+    };
+
+    const templateDefaults = {
+      booking: {
+        ...baseData,
+        booking_date: 'TBD',
+        booking_time: 'TBD',
+        service_name: 'Coaching Session',
+        duration: '60',
+        meeting_link: 'TBD'
+      },
+      booking_cancelled: {
+        ...baseData,
+        booking_date: 'TBD',
+        booking_time: 'TBD',
+        service_name: 'Coaching Session',
+        cancellation_reason: 'Schedule conflict'
+      },
+      booking_rescheduled: {
+        ...baseData,
+        original_booking_date: 'TBD',
+        original_booking_time: 'TBD',
+        new_booking_date: 'TBD',
+        new_booking_time: 'TBD',
+        service_name: 'Coaching Session',
+        reschedule_reason: 'Requested by client'
+      },
+      account: {
+        ...baseData,
+        suspension_reason: 'Terms of service violation',
+        suspension_duration: '7 days',
+        suspension_date: new Date().toLocaleDateString(),
+        support_link: 'https://yoursite.com/support'
+      },
+      welcome: {
+        ...baseData,
+        dashboard_link: 'https://yoursite.com/dashboard',
+        booking_link: 'https://yoursite.com/book'
+      },
+      promotional: {
+        ...baseData,
+        offer_title: 'Special Coaching Offer',
+        discount_amount: '50% OFF',
+        offer_description: 'Get premium coaching at half price',
+        benefit_1: 'Personalized coaching sessions',
+        benefit_2: 'Exclusive training materials',
+        benefit_3: 'Priority support access',
+        expiry_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+        offer_link: 'https://yoursite.com/special-offer'
+      }
+    };
+
+    return templateDefaults[templateType] || templateDefaults.booking;
+  };
+
+  // Function to auto-fill data when user is selected
+  const handleUserSelection = async (user) => {
+    const templateType = getEffectiveTemplateType(currentTemplate?.template_type || 'booking');
+    
+    // For booking-related templates, fetch real booking data when possible
+    if (templateType === 'booking' || templateType === 'booking_cancelled' || templateType === 'booking_rescheduled') {
+      const bookingData = await fetchUserBookingData(user);
+      let filled = {};
+      if (templateType === 'booking') {
+        filled = bookingData;
+      } else if (templateType === 'booking_cancelled') {
+        filled = {
+          customer_name: bookingData.customer_name,
+          booking_date: bookingData.booking_date,
+          booking_time: bookingData.booking_time,
+          service_name: bookingData.service_name,
+          cancellation_reason: 'Schedule conflict'
+        };
+      } else if (templateType === 'booking_rescheduled') {
+        filled = {
+          customer_name: bookingData.customer_name,
+          original_booking_date: bookingData.booking_date,
+          original_booking_time: bookingData.booking_time,
+          new_booking_date: 'TBD',
+          new_booking_time: 'TBD',
+          service_name: bookingData.service_name,
+          reschedule_reason: 'Requested by client'
+        };
+      }
+      setAutoFilledData(prev => ({
+        ...prev,
+        [user.id]: filled
+      }));
+    } else {
+      // For other templates, use default template-specific data
+      const defaultData = getDefaultTemplateData(templateType, user);
+      setAutoFilledData(prev => ({
+        ...prev,
+        [user.id]: defaultData
+      }));
+    }
+  };
+
   const sendBulkEmail = async () => {
     if (selectedUsers.length === 0) {
       warning('Please select at least one user');
@@ -667,60 +926,57 @@ const EmailTemplateManager = () => {
 
       for (const user of selectedUsers) {
         try {
+          // Use auto-filled data for this user, or fallback to template-specific default data
+          const templateType = getEffectiveTemplateType(currentTemplate?.template_type || 'booking');
+          let userData = autoFilledData[user.id];
+          
+          if (!userData) {
+            if (templateType === 'booking' || templateType === 'booking_cancelled' || templateType === 'booking_rescheduled') {
+              userData = await fetchUserBookingData(user);
+              if (templateType === 'booking_cancelled') {
+                userData = {
+                  customer_name: userData.customer_name,
+                  booking_date: userData.booking_date,
+                  booking_time: userData.booking_time,
+                  service_name: userData.service_name,
+                  cancellation_reason: 'Schedule conflict'
+                };
+              } else if (templateType === 'booking_rescheduled') {
+                userData = {
+                  customer_name: userData.customer_name,
+                  original_booking_date: userData.booking_date,
+                  original_booking_time: userData.booking_time,
+                  new_booking_date: 'TBD',
+                  new_booking_time: 'TBD',
+                  service_name: userData.service_name,
+                  reschedule_reason: 'Requested by client'
+                };
+              }
+            } else {
+              userData = getDefaultTemplateData(templateType, user);
+            }
+          }
+          
           // Create personalized email content for this user
-          const personalizedSubject = replacePlaceholders(currentTemplate?.subject || '', {
-            customer_name: user.name || user.full_name || user.email.split('@')[0],
-            customer_email: user.email
-          });
+          const personalizedSubject = replacePlaceholders(currentTemplate?.subject || '', userData);
 
-          // Create personalized sample data for this specific user
-          const userSampleData = {
-            customer_name: user.name || user.full_name || user.email.split('@')[0],
-            customer_email: user.email,
-            booking_date: 'August 21, 2025',
-            booking_time: '2:00 PM',
-            service_name: '1-on-1 Coaching Session',
-            duration: '60',
-            meeting_link: 'https://meet.google.com/abc-def-ghi',
-            reschedule_link: 'https://yoursite.com/reschedule/123',
-            booking_link: 'https://yoursite.com/book',
-            dashboard_link: 'https://yoursite.com/dashboard',
-            support_link: 'https://yoursite.com/support',
-            suspension_reason: 'Terms of service violation',
-            suspension_duration: '7 days',
-            suspension_date: 'August 21, 2025',
-            offer_title: '50% Off Premium Coaching',
-            discount_amount: '50% OFF',
-            offer_description: 'Get premium coaching at half price',
-            benefit_1: 'Personalized coaching sessions',
-            benefit_2: 'Exclusive training materials',
-            benefit_3: 'Priority support access',
-            expiry_date: 'August 31, 2025',
-            offer_link: 'https://yoursite.com/special-offer',
-            new_booking_date: 'August 25, 2025',
-            new_booking_time: '3:00 PM',
-            original_booking_date: 'August 21, 2025',
-            original_booking_time: '2:00 PM',
-            reschedule_reason: 'Due to a scheduling conflict on our end, we need to move your session to a more convenient time.'
-          };
+          const personalizedHtml = replacePlaceholders(currentTemplate?.html_content || '', userData);
 
-          const personalizedHtml = replacePlaceholders(currentTemplate?.html_content || '', userSampleData);
-
-          const response = await fetch('/api/admin/send-template-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+      const response = await fetch('/api/admin/send-template-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
               to: user.email,
               subject: personalizedSubject,
               html: personalizedHtml,
-              templateName: currentTemplate?.name
-            })
-          });
+          templateName: currentTemplate?.name
+        })
+      });
 
-          const result = await response.json();
-          if (result.success) {
+      const result = await response.json();
+      if (result.success) {
             successCount++;
-          } else {
+      } else {
             errorCount++;
             console.error(`Failed to send email to ${user.email}:`, result.error);
           }
@@ -732,7 +988,7 @@ const EmailTemplateManager = () => {
 
       if (successCount > 0) {
         success(`Bulk email sent to ${successCount} users successfully!${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
-      } else {
+        } else {
         showError(`Failed to send emails to all ${selectedUsers.length} users`);
       }
 
@@ -753,11 +1009,21 @@ const EmailTemplateManager = () => {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      const result = await response.json();
-      if (result.success) {
-        success(`Successfully sent ${result.sentCount} reminder email(s) for tomorrow's sessions!`);
+      let result = null;
+      try {
+        result = await response.json();
+      } catch (_) {
+        // no-op; will fall back to generic error below
+      }
+
+      const ok = result && (result.success === true || result.successful === true);
+      const sent = (result && (result.sentCount ?? result.sent ?? result.count)) ?? 0;
+
+      if (ok) {
+        success(`Successfully sent ${sent} reminder email(s) for tomorrow's sessions!`);
       } else {
-        showError('Failed to send reminders: ' + result.error);
+        const errMsg = result && result.error ? result.error : `Unexpected response${response.status ? ` (HTTP ${response.status})` : ''}`;
+        showError('Failed to send reminders: ' + errMsg);
       }
     } catch (error) {
       showError('Error sending reminders: ' + error.message);
@@ -766,12 +1032,20 @@ const EmailTemplateManager = () => {
     }
   };
 
-  const toggleUserSelection = (user) => {
+  const toggleUserSelection = async (user) => {
     setSelectedUsers(prev => {
       const isSelected = prev.some(u => u.id === user.id);
       if (isSelected) {
+        // Remove user and their auto-filled data
+        setAutoFilledData(prevData => {
+          const newData = { ...prevData };
+          delete newData[user.id];
+          return newData;
+        });
         return prev.filter(u => u.id !== user.id);
       } else {
+        // Add user and auto-fill their data
+        handleUserSelection(user);
         return [...prev, user];
       }
     });
@@ -1140,9 +1414,8 @@ We look forward to our rescheduled session!`,
             <h3 className="text-lg font-semibold text-white mb-4">Select Template</h3>
             <div className="grid grid-cols-2 gap-3">
               {Object.entries(templates).map(([templateId, template]) => (
-                <button
+                <div
                   key={templateId}
-                  onClick={() => handleTemplateChange(templateId)}
                   className={`p-3 text-left rounded-lg border-2 transition-colors ${
                     selectedTemplate === templateId
                       ? 'border-orange-500 bg-orange-900/20 text-orange-300'
@@ -1150,7 +1423,10 @@ We look forward to our rescheduled session!`,
                   }`}
                 >
                   <div className="flex justify-between items-center w-full">
-                    <div>
+                    <div
+                      onClick={() => handleTemplateChange(templateId)}
+                      className="flex-1 cursor-pointer"
+                    >
                       <div className="font-medium text-white">{template.name}</div>
                       <div className="text-sm text-gray-400 mt-1">
                         {template.template_type || 'General'}
@@ -1166,7 +1442,7 @@ We look forward to our rescheduled session!`,
                       <Edit size={16} />
                     </button>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -1278,7 +1554,7 @@ We look forward to our rescheduled session!`,
                     {/* Main Message */}
                     <div>
                       <label className="block text-xs text-gray-400 mb-1">Main Message</label>
-                      <textarea
+              <textarea
                         value={getTemplateField('mainMessage') || ''}
                         onChange={(e) => updateTemplateField('mainMessage', e.target.value)}
                         rows={4}
@@ -1372,7 +1648,7 @@ We look forward to our rescheduled session!`,
                 <div className="max-h-64 overflow-y-auto border border-gray-600 rounded-lg bg-gray-700 p-4">
                   <div className="text-sm text-gray-300 mb-3">
                     Select users to send this email to:
-                  </div>
+            </div>
                   {users.map((user) => (
                     <div
                       key={user.id}
@@ -1401,6 +1677,89 @@ We look forward to our rescheduled session!`,
                 </div>
               )}
             </div>
+
+            {/* Auto-filled Data Editor */}
+            {selectedUsers.length > 0 && (
+              <div className="mt-4">
+            <button
+                  onClick={() => setShowDataEditor(!showDataEditor)}
+                  className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 font-medium mb-3"
+            >
+                  {showDataEditor ? 'Hide' : 'Edit'} Customer Data ({selectedUsers.length} users)
+            </button>
+                
+                {showDataEditor && (
+                  <div className="max-h-96 overflow-y-auto border border-gray-600 rounded-lg bg-gray-700 p-4 space-y-4">
+                    {selectedUsers.map((user) => {
+                      const userData = autoFilledData[user.id] || {};
+                      const templateType = currentTemplate?.template_type || 'booking';
+                      const templateFields = getTemplateFields(templateType);
+                      
+                      return (
+                        <div key={user.id} className="bg-gray-600 rounded-lg p-3">
+                          <div className="text-sm font-medium text-white mb-2 flex items-center justify-between">
+                            <span>{user.name || user.full_name || user.email}</span>
+                            <span className="text-xs text-gray-400 bg-gray-500 px-2 py-1 rounded">
+                              {templateType.toUpperCase()} Template
+                            </span>
+          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            {templateFields.map((field) => (
+                              <div key={field.key}>
+                                <label className="text-gray-300">{field.label}:</label>
+                                <input
+                                  type={field.type}
+                                  value={userData[field.key] || ''}
+                                  onChange={(e) => setAutoFilledData(prev => ({
+                                    ...prev,
+                                    [user.id]: { ...prev[user.id], [field.key]: e.target.value }
+                                  }))}
+                                  className="w-full p-1 bg-gray-500 border border-gray-400 rounded text-white text-xs"
+                                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Linked Preview (Subject + Body) using edited customer data */}
+                <div className="mt-4 bg-gray-800 border border-gray-700 rounded-lg">
+                  <div className="p-3 border-b border-gray-700 flex items-center justify-between">
+                    <div className="text-sm font-medium text-white">Preview (linked to customer data)</div>
+                    <div className="flex items-center space-x-2">
+                      <label className="text-xs text-gray-300">Preview as:</label>
+                      <select
+                        className="bg-gray-700 text-white text-xs rounded px-2 py-1 border border-gray-600"
+                        value={previewUserId || (selectedUsers[0]?.id || '')}
+                        onChange={(e) => setPreviewUserId(e.target.value)}
+                      >
+                        {selectedUsers.map(u => (
+                          <option key={u.id} value={u.id}>{u.name || u.full_name || u.email}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  {(() => {
+                    const pid = previewUserId || (selectedUsers[0]?.id || null);
+                    const data = pid ? (autoFilledData[pid] || {}) : {};
+                    const subject = replacePlaceholders(currentTemplate?.subject || '', data);
+                    const html = replacePlaceholders(currentTemplate?.html_content || '', data);
+                    return (
+                      <div className="p-4 space-y-3">
+                        <div className="text-sm text-gray-300">
+                          <span className="text-gray-400">Subject:</span> <span className="text-white">{subject}</span>
+                        </div>
+                        <div className="bg-white rounded p-3 text-sm" style={{ color: '#111' }} dangerouslySetInnerHTML={{ __html: html }} />
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
             
             <button
               onClick={sendBulkEmail}
