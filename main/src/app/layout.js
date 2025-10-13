@@ -30,14 +30,14 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`dark ${montserrat.variable} ${lato.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${montserrat.variable} ${lato.variable}`} suppressHydrationWarning>
       <head>
         <link rel="icon" href="/Logo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/Logo.png" />
         <link rel="shortcut icon" href="/Logo.png" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </head>
-      <body className="font-body bg-gray-900 text-gray-100 antialiased transition-colors duration-300">
+      <body className="font-body antialiased transition-colors duration-300">
         <Providers>
           {children}
         </Providers>

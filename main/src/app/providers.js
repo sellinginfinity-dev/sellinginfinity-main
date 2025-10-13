@@ -13,11 +13,11 @@ export function Providers({ children }) {
         <ToastProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="dark"
-            enableSystem={false}
+            defaultTheme="system"
+            enableSystem={true}
             storageKey="sellinginfinity-theme"
-            themes={["dark"]}
-            forcedTheme="dark"
+            themes={["light", "dark", "system"]}
+            forcedTheme={undefined}
           >
             {children}
           </ThemeProvider>

@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/AuthContext';
 import { 
   User, 
   Calendar, 
@@ -27,6 +28,9 @@ export default function DashboardSidebar({
   setIsOpen 
 }) {
   const router = useRouter();
+  const { updateProfile } = useAuth();
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
 
   const navigationItems = [
     { id: 'overview', label: 'Overview', icon: User },
@@ -58,6 +62,27 @@ export default function DashboardSidebar({
   const userInitial = profile?.first_name?.[0] || user?.email?.[0]?.toUpperCase() || 'U';
   const displayName = profile?.first_name || user?.email?.split('@')[0] || 'User';
 
+  const onAvatarClick = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const onAvatarSelected = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        setUploading(true);
+        const dataUrl = reader.result;
+        await updateProfile({ avatar_url: dataUrl });
+        // close/reopen sidebar to refresh? parent passes profile; assume context reload elsewhere
+      } finally {
+        setUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Brand/Logo Section */}
@@ -84,9 +109,25 @@ export default function DashboardSidebar({
       {/* User Profile Section */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-blue-600 dark:bg-yellow-400 rounded-full flex items-center justify-center text-white dark:text-gray-900 text-lg font-medium">
-            {userInitial}
-          </div>
+          <button
+            type="button"
+            onClick={onAvatarClick}
+            title="Click to add/change your photo"
+            className="relative group w-12 h-12 rounded-full overflow-hidden focus:outline-none border border-gray-300 dark:border-gray-600"
+          >
+            {profile?.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-blue-600 dark:bg-yellow-400 flex items-center justify-center text-white dark:text-gray-900 text-lg font-medium">
+                {userInitial}
+              </div>
+            )}
+            <span className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 text-[10px] text-white flex items-center justify-center transition-opacity">
+              {uploading ? 'Uploading...' : 'Change'}
+            </span>
+          </button>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onAvatarSelected} />
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
               {displayName}

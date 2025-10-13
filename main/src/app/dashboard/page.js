@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ProfileManager from '@/app/components/ProfileManager';
 import DashboardSidebar from '@/app/components/DashboardSidebar';
-import { Calendar, CreditCard, Settings, LogOut, User, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import ReviewForm from '@/app/components/ReviewForm';
+import { Calendar, CreditCard, Settings, LogOut, User, Clock, CheckCircle, AlertCircle, Star, X } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, loading, signOut, getProfile } = useAuth();
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -177,6 +179,9 @@ export default function DashboardPage() {
                   Manage your account and bookings
                 </p>
               </div>
+              <div className="flex items-center space-x-4">
+                {/* Theme switcher removed per request */}
+              </div>
             </div>
           </div>
         </header>
@@ -184,105 +189,208 @@ export default function DashboardPage() {
         <div className="px-4 sm:px-6 lg:px-8 py-8">
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Account Summary */}
-            <div className="lg:col-span-2">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Account Summary</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      {recentBookings.filter(b => b.status === 'confirmed').length}
+          <div className="space-y-6">
+            {/* Top Row - Account Summary and Quick Actions */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Account Summary */}
+              <div className="lg:col-span-2">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Account Summary</h2>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        {recentBookings.filter(b => b.status === 'confirmed').length}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">Upcoming Sessions</div>
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Upcoming Sessions</div>
-                  </div>
-                  <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {recentBookings.filter(b => b.status === 'completed').length}
+                    <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {recentBookings.filter(b => b.status === 'completed').length}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">Completed Sessions</div>
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Completed Sessions</div>
                   </div>
                 </div>
               </div>
-              
-              {/* Recent Bookings Preview */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Bookings</h3>
-                {loadingBookings ? (
+
+              {/* Quick Actions */}
+              <div className="space-y-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
                   <div className="space-y-3">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="animate-pulse flex space-x-4">
-                        <div className="rounded-full bg-gray-200 dark:bg-gray-600 h-10 w-10"></div>
-                        <div className="flex-1 space-y-2 py-1">
-                          <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4"></div>
-                          <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
-                        </div>
-                      </div>
-                    ))}
+                    <a
+                      href="/"
+                      className="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Calendar className="mr-3 text-blue-600 dark:text-blue-400" size={20} />
+                      <span className="text-gray-900 dark:text-white">Book New Session</span>
+                    </a>
+                    <button
+                      onClick={() => setShowReviewModal(true)}
+                      className="w-full flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Star className="mr-3 text-yellow-500" size={20} />
+                      <span className="text-gray-900 dark:text-white">Add Review</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('profile')}
+                      className="w-full flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Settings className="mr-3 text-gray-600 dark:text-gray-400" size={20} />
+                      <span className="text-gray-900 dark:text-white">Update Profile</span>
+                    </button>
                   </div>
-                ) : recentBookings.length > 0 ? (
-                  <div className="space-y-3">
-                    {recentBookings.slice(0, 3).map((booking) => (
-                      <div key={booking.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900">
-                            <Calendar size={16} className="text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {formatDate(booking.booking_date)} at {formatTime(booking.booking_time)}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {booking.duration_minutes || 60} minutes
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {getStatusIcon(booking.status)}
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                    No bookings yet. <a href="/" className="text-blue-600 hover:underline">Book your first session</a>
-                  </p>
-                )}
-                
-                {recentBookings.length > 3 && (
-                  <button
-                    onClick={() => setActiveTab('bookings')}
-                    className="w-full mt-4 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    View All Bookings
-                  </button>
-                )}
+                </div>
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="space-y-6">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+            {/* Recent Bookings Preview */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Bookings</h3>
+              {loadingBookings ? (
                 <div className="space-y-3">
-                  <a
-                    href="/"
-                    className="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <Calendar className="mr-3 text-blue-600 dark:text-blue-400" size={20} />
-                    <span className="text-gray-900 dark:text-white">Book New Session</span>
-                  </a>
-                  <button
-                    onClick={() => setActiveTab('profile')}
-                    className="w-full flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <Settings className="mr-3 text-gray-600 dark:text-gray-400" size={20} />
-                    <span className="text-gray-900 dark:text-white">Update Profile</span>
-                  </button>
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="animate-pulse flex space-x-4">
+                      <div className="rounded-full bg-gray-200 dark:bg-gray-600 h-10 w-10"></div>
+                      <div className="flex-1 space-y-2 py-1">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4"></div>
+                        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              ) : recentBookings.length > 0 ? (
+                <div className="space-y-3">
+                  {recentBookings.slice(0, 3).map((booking) => (
+                    <div key={booking.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900">
+                          <Calendar size={16} className="text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {formatDate(booking.booking_date)} at {formatTime(booking.booking_time)}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {booking.duration_minutes || 60} minutes
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {getStatusIcon(booking.status)}
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  No bookings yet. <a href="/" className="text-blue-600 hover:underline">Book your first session</a>
+                </p>
+              )}
+              
+              {recentBookings.length > 3 && (
+                <button
+                  onClick={() => setActiveTab('bookings')}
+                  className="w-full mt-4 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  View All Bookings
+                </button>
+              )}
+            </div>
+
+            {/* Detailed Statistics */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Progress</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg">
+                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                    {recentBookings.length}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">Total Sessions</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">All time</div>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg">
+                  <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">
+                    {recentBookings.filter(b => b.status === 'completed').length}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">Completed</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Success rate</div>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg">
+                  <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">
+                    {recentBookings.reduce((total, booking) => total + (booking.duration_minutes || 60), 0)}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">Minutes</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total time</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Helpful Tips */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tips for Success</h3>
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  <div className="flex-shrink-0 w-6 h-6 bg-yellow-100 dark:bg-yellow-800 rounded-full flex items-center justify-center">
+                    <span className="text-yellow-600 dark:text-yellow-400 text-sm font-bold">1</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Prepare for your session</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Come with specific questions or topics you'd like to discuss to make the most of your time.</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 dark:text-blue-400 text-sm font-bold">2</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Be punctual</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Join your session a few minutes early to ensure everything is working properly.</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 dark:text-green-400 text-sm font-bold">3</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Follow up on action items</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Review and implement the recommendations from your previous sessions.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Resources */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Resources</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <a
+                  href="/download"
+                  className="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="flex-shrink-0 w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                    <CreditCard size={20} className="text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Download PDFs</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Access your purchased materials</p>
+                  </div>
+                </a>
+                <a
+                  href="/"
+                  className="flex items-center p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="flex-shrink-0 w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                    <Calendar size={20} className="text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Browse Products</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Explore our services</p>
+                  </div>
+                </a>
               </div>
             </div>
           </div>
@@ -359,6 +467,33 @@ export default function DashboardPage() {
         {activeTab === 'profile' && <ProfileManager />}
         </div>
       </div>
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Share Your Experience
+              </h3>
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4">
+              <ReviewForm 
+                onSuccess={() => setShowReviewModal(false)} 
+                defaultEmail={user?.email || ''}
+                hideEmailInput={!!user?.email}
+                hideYears={true}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

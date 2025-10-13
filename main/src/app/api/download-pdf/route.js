@@ -35,8 +35,9 @@ export async function GET(request) {
       `);
 
     if (email) {
-      // Check for any purchase by this email
-      query = query.eq('customer_email', email).eq('status', 'completed');
+      // Check for any purchase by this email (case-insensitive)
+      const normalizedEmail = email.toLowerCase().trim();
+      query = query.ilike('customer_email', normalizedEmail).eq('status', 'completed');
     } else if (sessionId) {
       // Check for Stripe session
       query = query.eq('stripe_session_id', sessionId).eq('status', 'completed');
@@ -46,6 +47,11 @@ export async function GET(request) {
     }
 
     const { data: transactions, error: transactionError } = await query;
+
+    // Debug logging
+    console.log('Email:', email);
+    console.log('Found transactions:', transactions?.length || 0);
+    console.log('Transactions:', transactions);
 
     if (transactionError) {
       console.error('Error querying transactions:', transactionError);

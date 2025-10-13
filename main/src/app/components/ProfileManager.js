@@ -123,10 +123,10 @@ export default function ProfileManager() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900 text-gray-900 dark:text-white flex items-center">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
           <User className="mr-2" size={20} />
           Profile Settings
         </h2>
@@ -163,8 +163,8 @@ export default function ProfileManager() {
       {message && (
         <div className={`mx-6 mt-4 p-3 rounded-lg ${
           message.includes('Error') 
-            ? 'bg-red-50 text-red-700 border border-red-200' 
-            : 'bg-green-50 text-green-700 border border-green-200'
+            ? 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800' 
+            : 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800'
         }`}>
           <div className="flex items-center">
             <CheckCircle size={16} className="mr-2" />
@@ -178,126 +178,158 @@ export default function ProfileManager() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Basic Information */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 text-gray-900 dark:text-white mb-4">Basic Information</h3>
+            <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">Basic Information</h3>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                   Email Address
                 </label>
-                <div className="flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
+                <div className="flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700">
                   <Mail size={16} className="text-gray-400 mr-2" />
-                  <span className="text-gray-900 text-gray-900 dark:text-white">{user?.email}</span>
+                  <span className="text-gray-900 dark:text-white">{user?.email}</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                     First Name
                   </label>
-                  <input
-                    type="text"
-                    name="first_name"
-                    value={formData.first_name}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
-                  />
+                  {!isEditing ? (
+                    <div className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700">
+                      <span>{formData.first_name || 'Not provided'}</span>
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      name="first_name"
+                      value={formData.first_name}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 !bg-white !text-gray-900"
+                    />
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                     Last Name
                   </label>
-                  <input
-                    type="text"
-                    name="last_name"
-                    value={formData.last_name}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
-                  />
+                  {!isEditing ? (
+                    <div className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700">
+                      <span>{formData.last_name || 'Not provided'}</span>
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 !bg-white !text-gray-900"
+                    />
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                   Phone Number
                 </label>
-                <div className="relative">
-                  <Phone size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    placeholder="+1 (555) 123-4567"
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
-                  />
-                </div>
+                {!isEditing ? (
+                  <div className="flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700">
+                    <Phone size={16} className="text-gray-400 mr-2" />
+                    <span className="text-gray-900 dark:text-white">{formData.phone || 'Not provided'}</span>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Phone size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="+1 (555) 123-4567"
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 !bg-white !text-gray-900"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* Professional Information */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 text-gray-900 dark:text-white mb-4">Professional Details</h3>
+            <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">Professional Details</h3>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                   Company
                 </label>
-                <input
-                  type="text"
-                  name="company"
-                  value={formData.company}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
+                {!isEditing ? (
+                  <div className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700">
+                    <span>{formData.company || 'Not provided'}</span>
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                   Job Title
                 </label>
-                <input
-                  type="text"
-                  name="job_title"
-                  value={formData.job_title}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
+                {!isEditing ? (
+                  <div className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700">
+                    <span>{formData.job_title || 'Not provided'}</span>
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    name="job_title"
+                    value={formData.job_title}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                   <Globe className="inline mr-1" size={16} />
                   Timezone
                 </label>
-                <div className="relative">
-                  <MapPin size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <select
-                    name="timezone"
-                    value={formData.timezone}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
-                  >
-                    {Object.entries(getTimezonesByRegion()).map(([region, timezones]) => (
-                      <optgroup key={region} label={region}>
-                        {timezones.map((tz) => (
-                          <option key={tz.value} value={tz.value}>
-                            {tz.label}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
+                {!isEditing ? (
+                  <div className="flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700">
+                    <MapPin size={16} className="text-gray-400 mr-2" />
+                    <span className="text-gray-900 dark:text-white">{formData.timezone || 'Not set'}</span>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <MapPin size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <select
+                      name="timezone"
+                      value={formData.timezone}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 !bg-white !text-gray-900"
+                    >
+                      {Object.entries(getTimezonesByRegion()).map(([region, timezones]) => (
+                        <optgroup key={region} label={region}>
+                          {timezones.map((tz) => (
+                            <option key={tz.value} value={tz.value}>
+                              {tz.label}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {(() => {
                   const detectedCountry = getDetectedCountry();
                   return detectedCountry && detectedCountry.detected ? (
@@ -305,7 +337,7 @@ export default function ProfileManager() {
                       🌍 Auto-detected: {detectedCountry.name} ({detectedCountry.code}) - {formData.timezone}
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Current time: {(() => {
                         try {
                           // Only show time if timezone is valid and not empty
@@ -342,23 +374,28 @@ export default function ProfileManager() {
 
         {/* Bio */}
         <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
             Bio
           </label>
-          <textarea
-            name="bio"
-            value={formData.bio}
-            onChange={handleInputChange}
-            disabled={!isEditing}
-            rows={3}
-            placeholder="Tell us a bit about yourself..."
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-800 text-gray-900 dark:text-white"
-          />
+          {!isEditing ? (
+            <div className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 min-h-[80px]">
+              <span>{formData.bio || 'No bio provided'}</span>
+            </div>
+          ) : (
+            <textarea
+              name="bio"
+              value={formData.bio}
+              onChange={handleInputChange}
+              rows={3}
+              placeholder="Tell us a bit about yourself..."
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 !bg-white !text-gray-900"
+            />
+          )}
         </div>
 
         {/* Notification Preferences */}
         <div className="mt-6">
-          <h3 className="text-lg font-medium text-gray-900 text-gray-900 dark:text-white mb-4">Notification Preferences</h3>
+          <h3 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">Notification Preferences</h3>
           <div className="space-y-3">
             <label className="flex items-center">
               <input
@@ -366,8 +403,7 @@ export default function ProfileManager() {
                 name="notifications.email_bookings"
                 checked={formData.notification_preferences.email_bookings}
                 onChange={handleInputChange}
-                disabled={!isEditing}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+                className="h-4 w-4 text-blue-600 dark:text-green-600 focus:ring-blue-500 dark:focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
               />
               <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                 Email notifications for new bookings
@@ -380,8 +416,7 @@ export default function ProfileManager() {
                 name="notifications.email_reminders"
                 checked={formData.notification_preferences.email_reminders}
                 onChange={handleInputChange}
-                disabled={!isEditing}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+                className="h-4 w-4 text-blue-600 dark:text-green-600 focus:ring-blue-500 dark:focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
               />
               <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                 Email reminders for upcoming sessions
@@ -394,8 +429,7 @@ export default function ProfileManager() {
                 name="notifications.sms_reminders"
                 checked={formData.notification_preferences.sms_reminders}
                 onChange={handleInputChange}
-                disabled={!isEditing}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+                className="h-4 w-4 text-blue-600 dark:text-green-600 focus:ring-blue-500 dark:focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
               />
               <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                 SMS reminders for upcoming sessions

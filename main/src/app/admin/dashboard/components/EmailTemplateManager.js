@@ -969,7 +969,6 @@ const EmailTemplateManager = () => {
               to: user.email,
               subject: personalizedSubject,
               html: personalizedHtml,
-              provider: 'smtp',
           templateName: currentTemplate?.name
         })
       });
@@ -1467,17 +1466,8 @@ We look forward to our rescheduled session!`,
           <div className="bg-gray-800 p-6 rounded-lg shadow border border-gray-700">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-white">Email Content</h3>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPreviewMode(!previewMode)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    previewMode
-                      ? 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-                      : 'bg-orange-500 text-white hover:bg-orange-600'
-                  }`}
-                >
-                  {previewMode ? 'Edit HTML' : 'Preview'}
-                </button>
+              <div className="text-xs text-gray-300 bg-gray-700/60 px-2 py-1 rounded">
+                Select a user to see preview
               </div>
             </div>
 

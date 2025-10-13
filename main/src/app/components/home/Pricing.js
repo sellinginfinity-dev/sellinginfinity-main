@@ -54,9 +54,19 @@ export default function Pricing({ products, onPurchaseNow }) {
   };
 
   return (
-    <section id="services" className="section-padding bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100">
-      <div className="content-container container-padding">
-        <h2 className="text-section font-heading text-center mb-8">Pricing Plans</h2>
+    <section id="services" className="relative section-padding bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-800/30 dark:to-gray-900"></div>
+      
+      {/* Subtle floating elements */}
+      <div className="absolute top-10 right-10 w-24 h-24 bg-blue-100/20 dark:bg-blue-900/10 rounded-full blur-xl animate-pulse"></div>
+      <div className="absolute bottom-10 left-10 w-32 h-32 bg-purple-100/15 dark:bg-purple-900/8 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1.5s'}}></div>
+      
+      <div className="relative content-container container-padding z-10">
+        <div className="text-center mb-12">
+          <h2 className="text-section font-heading mb-4">Pricing Plans</h2>
+          <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto rounded-full"></div>
+        </div>
         
         {products.length === 0 ? (
           <div className="text-center text-gray-500 dark:text-gray-400">
@@ -67,15 +77,20 @@ export default function Pricing({ products, onPurchaseNow }) {
             {products.map((product) => (
               <div 
                 key={product.id} 
-                className={`card-ui ${product.is_popular ? 'card-popular-ui' : ''} relative`}
+                className={`card-ui ${product.is_popular ? 'card-popular-ui' : ''} relative group hover:scale-105 hover:-translate-y-2 transition-all duration-300 transform`}
               >
                 {product.is_popular && (
                   <div className="popular-badge-ui">Popular</div>
                 )}
                 
-                <div className="text-center p-6">
-                  <div className="mb-4">
-                    {getProductIcon(product.type)}
+                <div className="text-center p-6 relative">
+                  {/* Subtle background glow on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-purple-50/0 group-hover:from-blue-50/30 group-hover:to-purple-50/20 dark:group-hover:from-blue-900/20 dark:group-hover:to-purple-900/10 rounded-lg transition-all duration-300"></div>
+                  
+                  <div className="relative z-10 mb-4">
+                    <div className="inline-block p-3 rounded-full bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 group-hover:scale-110 transition-transform duration-300">
+                      {getProductIcon(product.type)}
+                    </div>
                   </div>
                   <h3 className="font-heading font-semibold text-2xl mb-2 text-gray-900 dark:text-white">
                     {product.name}
@@ -113,14 +128,17 @@ export default function Pricing({ products, onPurchaseNow }) {
                     </p>
                   </div>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-3 relative z-10">
                     {getProductButtonText(product.type).map((button, index) => (
                       <button 
                         key={index}
                         onClick={() => handleProductAction(product, button.primary)}
-                        className={`w-full text-button ${button.primary ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`w-full text-button ${button.primary ? 'btn-primary hover:scale-105 hover:-translate-y-1' : 'btn-secondary hover:scale-105 hover:-translate-y-1'} transition-all duration-300 transform relative overflow-hidden group`}
                       >
-                        {button.text}
+                        <span className="relative z-10">{button.text}</span>
+                        {button.primary && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        )}
                       </button>
                     ))}
                   </div>

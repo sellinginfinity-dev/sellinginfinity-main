@@ -2,81 +2,49 @@
 
 @theme {
   --color-light-primary: #ffffff;
-  --color-light-secondary: #f3f4f6;
-  --color-light-accent: #1d4ed8;
-  --color-light-text: #090d14;
+  --color-light-secondary: #f8fafc;
+  --color-light-accent: #3b82f6;
+  --color-light-text: #1f2937;
+  --color-light-text-secondary: #6b7280;
   --color-light-border: #e5e7eb;
+  --color-light-hover: #f3f4f6;
   
-  --color-dark-primary: #121212;
-  --color-dark-secondary: #1e1e1e;
-  --color-dark-accent: #facc15;
-  --color-dark-text: #e5e5e5;
-  --color-dark-border: #2e2e2e;
+  --color-dark-primary: #111827;
+  --color-dark-secondary: #1f2937;
+  --color-dark-accent: #f59e0b;
+  --color-dark-text: #f9fafb;
+  --color-dark-text-secondary: #9ca3af;
+  --color-dark-border: #374151;
+  --color-dark-hover: #374151;
 
   --font-family-heading: 'Montserrat', sans-serif;
   --font-family-body: 'Lato', sans-serif;
-  
-  /* Define the colors properly for Tailwind utilities */
-  --color-primary: light-dark(var(--color-light-primary), var(--color-dark-primary));
-  --color-secondary: light-dark(var(--color-light-secondary), var(--color-dark-secondary));
-  --color-accent: light-dark(var(--color-light-accent), var(--color-dark-accent));
-  --color-text: light-dark(var(--color-light-text), var(--color-dark-text));
-  --color-border: light-dark(var(--color-light-border), var(--color-dark-border));
 }
 
 @layer base {
-  /* Force dark mode styles for all elements */
+  /* Theme-aware base styles */
   html {
-    color-scheme: dark;
+    color-scheme: light dark;
   }
   
   body {
-    background-color: #111827 !important;
-    color: #f9fafb !important;
+    background-color: var(--color-light-primary);
+    color: var(--color-light-text);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
-  /* Override any white backgrounds to dark */
-  .bg-white {
-    background-color: #1f2937 !important;
-  }
-  
-  /* Override light text colors */
-  .text-gray-900 {
-    color: #f9fafb !important;
-  }
-  
-  .text-gray-700 {
-    color: #d1d5db !important;
-  }
-  
-  .text-gray-600 {
-    color: #9ca3af !important;
-  }
-  
-  .text-gray-500 {
-    color: #6b7280 !important;
-  }
-  
-  /* Override light borders */
-  .border-gray-200 {
-    border-color: #374151 !important;
-  }
-  
-  .border-gray-300 {
-    border-color: #4b5563 !important;
-  }
-  
-  /* Override light hover states */
-  .hover\:bg-gray-100:hover {
-    background-color: #374151 !important;
-  }
-  
-  .hover\:bg-gray-50:hover {
-    background-color: #374151 !important;
+  .dark body {
+    background-color: var(--color-dark-primary);
+    color: var(--color-dark-text);
   }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-family-heading);
+    color: var(--color-light-text);
+  }
+  
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: var(--color-dark-text);
   }
 }
 
@@ -137,7 +105,7 @@
 
   /* Component: Secondary Button */
   .btn-secondary {
-    background-color: #e5e7eb;
+    background-color: var(--color-light-hover);
     color: var(--color-light-text);
     font-weight: 600;
     padding: 0.75rem 1.5rem;
@@ -152,12 +120,13 @@
     color: var(--color-dark-text);
   }
   .dark .btn-secondary:hover {
-    background-color: #374151;
+    background-color: var(--color-dark-hover);
   }
   
   /* Component: Card */
   .card-ui {
     background-color: var(--color-light-primary);
+    border: 1px solid var(--color-light-border);
     border-radius: 0.75rem;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     overflow: visible;
@@ -169,6 +138,7 @@
   }
   .dark .card-ui {
     background-color: var(--color-dark-secondary);
+    border-color: var(--color-dark-border);
   }
   
   .card-popular-ui {
@@ -240,5 +210,39 @@
   .text-button {
     font-size: 0.875rem;
     font-weight: 500;
+  }
+  
+  /* Force black background and white text for profile card */
+  .profile-card-black {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+  
+  .profile-card-black h1,
+  .profile-card-black h2,
+  .profile-card-black h3,
+  .profile-card-black h4,
+  .profile-card-black h5,
+  .profile-card-black h6 {
+    color: #ffffff !important;
+  }
+  
+  .profile-card-black label,
+  .profile-card-black span {
+    color: #ffffff !important;
+  }
+  
+  /* Infinite scroll animation */
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-300px);
+    }
+  }
+  
+  .animate-scroll {
+    animation: scroll linear infinite;
   }
 }

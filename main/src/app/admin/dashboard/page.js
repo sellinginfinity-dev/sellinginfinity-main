@@ -1396,6 +1396,13 @@ export default function AdminDashboard() {
                 onClick={setActiveTab}
               />
               <TabButton
+                id="reviews"
+                label="Reviews"
+                icon={Star}
+                active={activeTab === 'reviews'}
+                onClick={() => router.push('/admin/reviews')}
+              />
+              <TabButton
                 id="content"
                 label="Content"
                 icon={FileText}
