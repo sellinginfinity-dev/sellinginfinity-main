@@ -238,7 +238,7 @@
       transform: translateX(0);
     }
     100% {
-      transform: translateX(-300px);
+      transform: translateX(-320px);
     }
   }
   

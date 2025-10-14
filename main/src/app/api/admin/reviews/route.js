@@ -47,3 +47,42 @@ export async function GET(request) {
     );
   }
 }
+
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const { name, content, rating = 5, position = null, company = null, image_url = null } = body || {};
+
+    if (!name || !content) {
+      return NextResponse.json({ success: false, error: 'Name and content are required' }, { status: 400 });
+    }
+
+    const insertPayload = {
+      customer_name: name,
+      review_text: content,
+      rating: Number(rating) || 5,
+      position,
+      company,
+      image_url,
+      is_approved: false,
+      created_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('testimonials')
+      .insert([insertPayload])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Insert testimonial error:', error);
+      return NextResponse.json({ success: false, error: 'Failed to add testimonial' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, testimonial: data });
+
+  } catch (error) {
+    console.error('Error in admin testimonials POST:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+  }
+}
