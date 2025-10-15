@@ -75,22 +75,45 @@ export async function GET(request) {
       return new Response(JSON.stringify({ error: 'No PDF products found in your purchases.' }), { status: 404 });
     }
 
-    // 3. If the purchase is valid, find and serve the PDF
-    // Since we don't have file_url in the products table, use the default PDF
-    const pdfPath = path.join(process.cwd(), 'IMPACT.pdf');
-
-    const pdfBuffer = await fs.readFile(pdfPath);
-
-    // Get filename for download
-    const filename = pdfTransaction.products?.name ? 
+    // 3. If the purchase is valid, try to serve a product-specific PDF from storage
+    const productId = pdfTransaction.products?.id;
+    const preferredFilename = pdfTransaction.products?.name ? 
       `${pdfTransaction.products.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf` : 
-      'IMPACT.pdf';
+      'download.pdf';
+
+    try {
+      if (productId) {
+        const storagePath = `products/${productId}.pdf`;
+        const { data: fileData, error: storageError } = await supabaseAdmin
+          .storage
+          .from('product-pdfs')
+          .download(storagePath);
+
+        if (!storageError && fileData) {
+          const arrayBuffer = await fileData.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          return new Response(buffer, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="${preferredFilename}"`,
+            },
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Falling back to default PDF, storage download failed:', e);
+    }
+
+    // Fallback to default bundled PDF
+    const fallbackPath = path.join(process.cwd(), 'IMPACT.pdf');
+    const pdfBuffer = await fs.readFile(fallbackPath);
 
     return new Response(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `attachment; filename="${preferredFilename}"`,
       },
     });
 

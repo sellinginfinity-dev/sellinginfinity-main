@@ -9,6 +9,45 @@ export default function ServicesManager({ user }) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingService, setEditingService] = useState(null);
+  const [selectedPdfFile, setSelectedPdfFile] = useState(null);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const isPdfType = (t) => {
+    const v = (t || '').toLowerCase();
+    return v === 'pdf' || v === 'digital_product' || v === 'pdf_download';
+  };
+
+  const handleUploadPdfOnly = async () => {
+    if (!editingService?.id) {
+      showError('Service not loaded');
+      return;
+    }
+    if (!selectedPdfFile) {
+      warning('Please choose a PDF file first');
+      return;
+    }
+    try {
+      setUploadingPdf(true);
+      const form = new FormData();
+      form.append('productId', editingService.id);
+      form.append('file', selectedPdfFile);
+      const uploadRes = await fetch('/api/admin/upload-product-pdf', {
+        method: 'POST',
+        body: form
+      });
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        showError(err.error || 'Failed to upload PDF');
+      } else {
+        success('PDF updated successfully');
+        setSelectedPdfFile(null);
+      }
+    } catch (err) {
+      console.error('Upload PDF error:', err);
+      showError('Failed to upload PDF');
+    } finally {
+      setUploadingPdf(false);
+    }
+  };
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -44,9 +83,13 @@ export default function ServicesManager({ user }) {
         : '/api/admin/supabase-services';
       
       const method = editingService ? 'PUT' : 'POST';
+      // Normalize price: store as cents (integer)
+      const priceNumber = parseFloat(formData.price || '0');
+      const priceCents = Number.isFinite(priceNumber) ? Math.round(priceNumber * 100) : 0;
+
       const body = editingService 
-        ? { id: editingService.id, ...formData }
-        : formData;
+        ? { id: editingService.id, ...formData, price: priceCents }
+        : { ...formData, price: priceCents };
 
       const response = await fetch(url, {
         method,
@@ -55,6 +98,35 @@ export default function ServicesManager({ user }) {
       });
 
       if (response.ok) {
+        const result = await response.json().catch(() => ({}));
+        const savedServiceId = editingService?.id || result?.service?.id;
+
+        // If this is a PDF service and a new file was chosen, upload it now
+        if (isPdfType(formData.type) && selectedPdfFile && savedServiceId) {
+          try {
+            setUploadingPdf(true);
+            const form = new FormData();
+            form.append('productId', savedServiceId);
+            form.append('file', selectedPdfFile);
+            const uploadRes = await fetch('/api/admin/upload-product-pdf', {
+              method: 'POST',
+              body: form
+            });
+            if (!uploadRes.ok) {
+              const err = await uploadRes.json().catch(() => ({}));
+              showError(err.error || 'Failed to upload PDF');
+            } else {
+              success('PDF updated successfully');
+            }
+          } catch (uploadErr) {
+            console.error('PDF upload error:', uploadErr);
+            showError('Failed to upload PDF');
+          } finally {
+            setUploadingPdf(false);
+            setSelectedPdfFile(null);
+          }
+        }
+
         fetchServices();
         setShowForm(false);
         setEditingService(null);
@@ -77,11 +149,13 @@ export default function ServicesManager({ user }) {
     setFormData({
       name: service.name || '',
       description: service.description || '',
-      price: service.price || '',
+      // Show dollars in the form for editor convenience
+      price: service.price ? (service.price / 100).toString() : '',
       type: service.type || '',
       features: service.features || '',
       is_popular: service.is_popular || false
     });
+    setSelectedPdfFile(null);
     setShowForm(true);
   };
 
@@ -179,18 +253,93 @@ export default function ServicesManager({ user }) {
               </div>
               <div>
                 <label className="block text-text-primary font-medium mb-2">Service Type</label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full p-3 bg-surface border border-border rounded-md text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">Select service type</option>
-                  <option value="coaching_individual">1-on-1 Coaching</option>
-                  <option value="coaching_team">Team Coaching</option>
-                  <option value="pdf">PDF Download</option>
-                </select>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    className="w-full p-3 bg-gray-800 text-white border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-70"
+                    disabled={Boolean(editingService)}
+                  >
+                    <option className="bg-gray-800 text-white" value="">Select service type</option>
+                    <option className="bg-gray-800 text-white" value="coaching_individual">1-on-1 Coaching</option>
+                    <option className="bg-gray-800 text-white" value="coaching_team">Team Coaching</option>
+                    <option className="bg-gray-800 text-white" value="pdf">PDF Download</option>
+                    <option className="bg-gray-800 text-white" value="digital_product">PDF Download (legacy)</option>
+                  </select>
+                  {editingService && isPdfType(editingService.type) && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/admin/get-product-pdf-url?productId=${editingService.id}`);
+                          const data = await res.json();
+                          if (res.ok && data.url) {
+                            window.open(data.url, '_blank');
+                          } else {
+                            showError(data.error || 'PDF not found for this product');
+                          }
+                        } catch (err) {
+                          console.error('Open PDF error:', err);
+                          showError('Failed to open PDF');
+                        }
+                      }}
+                      className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md whitespace-nowrap"
+                    >
+                      View current PDF
+                    </button>
+                  )}
+                </div>
+                {Boolean(editingService) && (
+                  <p className="text-xs text-text-secondary mt-1">Service type is locked while editing an existing service.</p>
+                )}
               </div>
             </div>
+
+          {/* PDF Upload for PDF services (create and edit) */}
+          {isPdfType(formData.type) && (
+            <div>
+              <label className="block text-text-primary font-medium mb-2">{editingService ? 'Replace PDF (optional)' : 'Upload PDF'}</label>
+              <div className="flex items-center gap-3">
+                <input
+                  id="pdfFileInput"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setSelectedPdfFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="pdfFileInput"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700"
+                >
+                  Choose File
+                </label>
+                <span className="text-sm text-text-secondary">
+                  {selectedPdfFile ? selectedPdfFile.name : 'No file chosen'}
+                </span>
+              </div>
+              {editingService ? (
+                <>
+                  <p className="text-sm text-text-secondary mt-1">
+                    Uploading a new file will replace the current PDF for this product.
+                  </p>
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={handleUploadPdfOnly}
+                      disabled={!selectedPdfFile || uploadingPdf}
+                      className="px-4 py-2 bg-primary text-white rounded-md disabled:opacity-50"
+                    >
+                      {uploadingPdf ? 'Uploading…' : 'Update PDF'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-text-secondary mt-1">
+                  The selected PDF will be uploaded after you click "Add Service".
+                </p>
+              )}
+            </div>
+          )}
             <div>
               <label className="block text-text-primary font-medium mb-2">Features (comma-separated)</label>
               <textarea
@@ -234,7 +383,8 @@ export default function ServicesManager({ user }) {
       )}
 
       <div className="bg-background rounded-lg border border-border overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px]">
           <thead className="bg-surface">
             <tr>
               <th className="px-6 py-3 text-left text-text-primary font-medium">Name</th>
@@ -290,6 +440,7 @@ export default function ServicesManager({ user }) {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
